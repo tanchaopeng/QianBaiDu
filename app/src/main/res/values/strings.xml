@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">QianBaiDu</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_sub_content">SubContentActivity</string>
+    <string name="title_activity_sub_img">SubImgActivity</string>
+    <string name="title_activity_sub_book">SubBookActivity</string>
+    <string name="title_activity_sub_video">SubVideoActivity</string>
+</resources>
