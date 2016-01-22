@@ -31,24 +31,6 @@
                 android:value="youmo.qianbaidu.MainActivity" />
         </activity>
         <activity
-            android:name=".Sub.SubBookActivity"
-            android:label="@string/title_activity_sub_book"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="youmo.qianbaidu.MainActivity" />
-        </activity>
-        <activity
-            android:name=".Sub.SubVideoActivity"
-            android:label="@string/title_activity_sub_video"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="youmo.qianbaidu.MainActivity" />
-        </activity>
-        <activity
             android:name=".Sub.SubContentActivity"
             android:label="@string/title_activity_sub_content"
             android:parentActivityName=".Sub.SubImgActivity"

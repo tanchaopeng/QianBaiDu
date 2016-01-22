@@ -4,11 +4,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +29,7 @@ public class SubImgActivity extends CoreActivity {
     List<SubItemModel> Lsi=new ArrayList<SubItemModel>();
     SubItemAdapter Sia;
     String ExtraUrl="";
+    TextView load;
 
     private SharedPreferences Sp;
     private SharedPreferences.Editor SpEditor;
@@ -34,6 +39,8 @@ public class SubImgActivity extends CoreActivity {
         setContentView(R.layout.activity_sub_img);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        load=(TextView)findViewById(R.id.loading);
 
         Sp =this.getSharedPreferences("config", Context.MODE_PRIVATE);
         SpEditor= Sp.edit();
@@ -56,17 +63,42 @@ public class SubImgActivity extends CoreActivity {
             SpEditor.apply();
         }
 
+        final SwipeRefreshLayout swipe=(SwipeRefreshLayout)findViewById(R.id.swipe);
+        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                ShowToast("我刷新了");
+            }
+        });
+
         new GetList().execute(ExtraUrl);
 
         RecyclerView recyclerView=(RecyclerView)findViewById(R.id.sub_img_recycler);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        final LinearLayoutManager recLiner= new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(recLiner);
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                int lastVisibleItem = recLiner.findLastVisibleItemPosition();
+                int totalItemCount = recLiner.getItemCount();
+                //lastVisibleItem >= totalItemCount - 4 表示剩下4个item自动加载，各位自由选择
+                // dy>0 表示向下滑动
+                if (lastVisibleItem >= totalItemCount - 4 && dy > 0) {
+                    ShowToast("我要开始加载了");
+                    swipe.setRefreshing(false);
+                    new GetList().execute(ExtraUrl);
+                }
+            }
+        });
+
+
         Sia =new SubItemAdapter(Lsi);
         Sia.SetOnClick(new SubItemAdapter.IItemCilck() {
             @Override
             public void OnClick(View v, int i) {
                 startActivity(new Intent(v.getContext(),SubContentActivity.class).putExtra("url",Lsi.get(i).url));
-               // ShowToast(Lsi.get(i).url);
             }
         });
         recyclerView.setAdapter(Sia);
@@ -99,6 +131,7 @@ public class SubImgActivity extends CoreActivity {
         @Override
         protected void onPostExecute(String s) {
             Sia.notifyDataSetChanged();
+            load.setVisibility(View.GONE);
         }
     }
 }

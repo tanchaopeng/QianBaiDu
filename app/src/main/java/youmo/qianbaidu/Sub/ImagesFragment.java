@@ -18,6 +18,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -175,6 +176,12 @@ public class ImagesFragment extends Fragment {
             ImagesAda.notifyDataSetChanged();
             super.onProgressUpdate(values);
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        getActivity().finish();
     }
 
     class ImageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>

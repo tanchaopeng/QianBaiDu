@@ -40,21 +40,6 @@ public class MainActivity extends CoreActivity
         Lmm.add(new MenuModel("1","2","3"));
         new FromWeb("http://1144.la");
 
-        //String html= FileHelper.ReadToString("/data/html.txt");
-
-        //html= StringHelper.MidString(html,"<div id=\"firstpane\" class=\"menu_list\">","</div><!--end menu_list-->");
-
-//        List<String> item=StringHelper.MidListString(html,"<div class=\"menu_head\">","</ul>");
-//
-//        for(String s:item)
-//        {
-//            String _name=StringHelper.MidString(s,"/>","<div").trim();
-//            List<String> _l= StringHelper.MidListString(s,"'(.*?)'");
-//            for (int i=0;i<_l.size()/2;i++)
-//            {
-//                Lmm.add(new MenuModel(_name,_l.get(i*2),_l.get(i*2+1)));
-//            }
-//        }
 
         RecyclerView recyclerView=(RecyclerView)findViewById(R.id.menu_recycler);
         recyclerView.setHasFixedSize(true);

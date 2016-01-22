@@ -46,6 +46,7 @@ public class SubContentActivity extends AppCompatActivity {
             Bundle b = new Bundle();
             b.putString("url",url);
             imagesFragment.setArguments(b);
+            getFragmentManager().beginTransaction().addToBackStack(null);
             getFragmentManager().beginTransaction().add(R.id.sub_content_fragment, imagesFragment).commit();
             Log.i("消息","打开Fragment");
         }
@@ -55,7 +56,7 @@ public class SubContentActivity extends AppCompatActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             getFragmentManager().popBackStack();
-            return true;
+            return false;
         }else {
             return super.onKeyDown(keyCode, event);
         }
