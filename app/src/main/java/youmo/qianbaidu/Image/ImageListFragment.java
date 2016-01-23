@@ -1,40 +1,23 @@
-package youmo.qianbaidu.Sub;
+package youmo.qianbaidu.Image;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
-import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.annotation.Size;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 
 import Core.ImageModel;
 import Tools.BitmapHelper;
@@ -46,11 +29,12 @@ import youmo.qianbaidu.R;
 /**
  * Created by tanch on 2016/1/20.
  */
-public class ImagesFragment extends Fragment {
+public class ImageListFragment extends Fragment {
 
     private RecyclerView ImagesRecycler;
     private List<ImageModel> ImagesData=new ArrayList<ImageModel>();
     private ImageAdapter ImagesAda;
+    private List<String> ImageUrlList;
     private CacheHelper ch ;
 
     private GetImgs getImg;
@@ -118,7 +102,6 @@ public class ImagesFragment extends Fragment {
         Log.i("图片宽度",String.valueOf(ImageWidth));
         final String url=getArguments().getString("url");
 
-
         new GetImgs(getActivity(),ImageWidth,ImageWidth).execute(url);
 
         return v;
@@ -145,6 +128,7 @@ public class ImagesFragment extends Fragment {
                 list= StringHelper.MidListString(html,"([a-zA-z]+://[^\\s]*)(.jpg|.png)",0);
             else
                 list=GiveInfo();
+            ImageUrlList=list;
             for (String s:list)
             {
                 String url=s;
@@ -178,12 +162,6 @@ public class ImagesFragment extends Fragment {
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        getActivity().finish();
-    }
-
     class ImageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     {
         private List<ImageModel> Data;
@@ -207,7 +185,9 @@ public class ImagesFragment extends Fragment {
                         FragmentTransaction transaction =getFragmentManager().beginTransaction();
                         ImageContentFragment imageContent = new ImageContentFragment();
                         Bundle b = new Bundle();
-                        b.putString("url",ImagesData.get(getAdapterPosition()).url);
+                     //   b.putString("url",ImagesData.get(getAdapterPosition()).url);
+                        b.putStringArrayList("url",new ArrayList<String>(ImageUrlList));
+                        b.putInt("index",getAdapterPosition());
                         imageContent.setArguments(b);
                         transaction.add(R.id.sub_content_fragment, imageContent);
                         transaction.addToBackStack(null);

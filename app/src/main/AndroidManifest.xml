@@ -22,7 +22,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".Sub.SubImgActivity"
+            android:name=".Sub.SubItemFragment"
             android:label="@string/title_activity_sub_img"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
@@ -33,11 +33,11 @@
         <activity
             android:name=".Sub.SubContentActivity"
             android:label="@string/title_activity_sub_content"
-            android:parentActivityName=".Sub.SubImgActivity"
+            android:parentActivityName=".Sub.SubItemFragment"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="youmo.qianbaidu.Sub.SubImgActivity" />
+                android:value=".Sub.SubItemFragment" />
         </activity>
     </application>
 

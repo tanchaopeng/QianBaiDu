@@ -1,32 +1,14 @@
 package youmo.qianbaidu.Sub;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.app.FragmentManager;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.Toast;
+import android.app.Fragment;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import Tools.BitmapHelper;
-import Tools.CacheHelper;
-import Tools.HttpHelper;
-import Tools.StringHelper;
+import youmo.qianbaidu.Image.ImageListFragment;
 import youmo.qianbaidu.R;
 
 public class SubContentActivity extends AppCompatActivity {
@@ -42,13 +24,12 @@ public class SubContentActivity extends AppCompatActivity {
 
         if (findViewById(R.id.sub_content_fragment)!=null)
         {
-            ImagesFragment imagesFragment = new ImagesFragment();
+            SubItemFragment subItemFragment = new SubItemFragment();
             Bundle b = new Bundle();
             b.putString("url",url);
-            imagesFragment.setArguments(b);
+            subItemFragment.setArguments(b);
             getFragmentManager().beginTransaction().addToBackStack(null);
-            getFragmentManager().beginTransaction().add(R.id.sub_content_fragment, imagesFragment).commit();
-            Log.i("消息","打开Fragment");
+            getFragmentManager().beginTransaction().add(R.id.sub_content_fragment,subItemFragment).commit();
         }
     }
 
@@ -56,7 +37,10 @@ public class SubContentActivity extends AppCompatActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {
             getFragmentManager().popBackStack();
-            return false;
+            int i =getFragmentManager().getBackStackEntryCount();
+            if (i<1)
+                return super.onKeyDown(keyCode, event);
+            return true;
         }else {
             return super.onKeyDown(keyCode, event);
         }

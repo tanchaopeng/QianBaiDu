@@ -6,12 +6,17 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -20,41 +25,47 @@ import java.util.List;
 import Core.CoreActivity;
 import Core.SubItemModel;
 import Tools.FileHelper;
+import Tools.HttpHelper;
 import Tools.SPHelper;
 import Tools.StringHelper;
+import youmo.qianbaidu.Image.ImageListFragment;
 import youmo.qianbaidu.R;
 
-public class SubImgActivity extends CoreActivity {
+public class SubItemFragment extends Fragment {
 
     List<SubItemModel> Lsi=new ArrayList<SubItemModel>();
     SubItemAdapter Sia;
     String ExtraUrl="";
+    String NextUrl="";
+    boolean IsLoad=false;
     TextView load;
-
     private SharedPreferences Sp;
     private SharedPreferences.Editor SpEditor;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sub_img);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    public void onDestroyView() {
+        super.onDestroyView();
+        getActivity().finish();
+    }
 
-        load=(TextView)findViewById(R.id.loading);
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View v=inflater.from(getActivity()).inflate(R.layout.activity_sub_img,container,false);
 
-        Sp =this.getSharedPreferences("config", Context.MODE_PRIVATE);
+        load=(TextView)v.findViewById(R.id.loading);
+
+        Sp =getActivity().getSharedPreferences("config", Context.MODE_PRIVATE);
         SpEditor= Sp.edit();
 
-        Intent intent=getIntent();
-        ExtraUrl=intent.getStringExtra("url");
+        ExtraUrl=getArguments().getString("url");
 
         if (ExtraUrl==null||ExtraUrl.length()<1)
         {
             ExtraUrl=Sp.getString("url",null);
             if (ExtraUrl==null||ExtraUrl.length()<1)
             {
-                finish();
-                return;
+               return super.onCreateView(inflater,container,savedInstanceState);
             }
         }
         else
@@ -63,19 +74,11 @@ public class SubImgActivity extends CoreActivity {
             SpEditor.apply();
         }
 
-        final SwipeRefreshLayout swipe=(SwipeRefreshLayout)findViewById(R.id.swipe);
-        swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                ShowToast("我刷新了");
-            }
-        });
-
         new GetList().execute(ExtraUrl);
 
-        RecyclerView recyclerView=(RecyclerView)findViewById(R.id.sub_img_recycler);
+        RecyclerView recyclerView=(RecyclerView)v.findViewById(R.id.sub_img_recycler);
         recyclerView.setHasFixedSize(true);
-        final LinearLayoutManager recLiner= new LinearLayoutManager(this);
+        final LinearLayoutManager recLiner= new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(recLiner);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -85,11 +88,11 @@ public class SubImgActivity extends CoreActivity {
                 int totalItemCount = recLiner.getItemCount();
                 //lastVisibleItem >= totalItemCount - 4 表示剩下4个item自动加载，各位自由选择
                 // dy>0 表示向下滑动
-                if (lastVisibleItem >= totalItemCount - 4 && dy > 0) {
-                    ShowToast("我要开始加载了");
-                    swipe.setRefreshing(false);
-                    new GetList().execute(ExtraUrl);
-                }
+                if (!IsLoad)
+                    if (lastVisibleItem >= totalItemCount - 4 && dy > 0) {
+                        IsLoad=true;
+                        new GetList().execute(NextUrl);
+                    }
             }
         });
 
@@ -98,24 +101,31 @@ public class SubImgActivity extends CoreActivity {
         Sia.SetOnClick(new SubItemAdapter.IItemCilck() {
             @Override
             public void OnClick(View v, int i) {
-                startActivity(new Intent(v.getContext(),SubContentActivity.class).putExtra("url",Lsi.get(i).url));
+                //Lsi.get(i).url
+                ImageListFragment imageListFragment = new ImageListFragment();
+                Bundle b = new Bundle();
+                b.putString("url",Lsi.get(i).url);
+                imageListFragment.setArguments(b);
+                FragmentTransaction ft= getActivity().getFragmentManager().beginTransaction();
+                ft.addToBackStack(null);
+                ft.add(R.id.sub_content_fragment,imageListFragment).commit();
             }
         });
         recyclerView.setAdapter(Sia);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        return v;
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putString("url",ExtraUrl);
-        super.onSaveInstanceState(outState);
-    }
+
 
     class GetList extends AsyncTask<String,Integer,String>
     {
         @Override
         protected String doInBackground(String... params) {
-            String html=HttpGet(params[0]);
+            String url=params[0];
+            String html= HttpHelper.Get(url);
+            NextUrl=StringHelper.MidString(html,"上一页","下一页</a");
+            NextUrl=StringHelper.MidString(NextUrl,"<a href='","'>");
+            NextUrl=url.substring(0,url.lastIndexOf("/")+1)+NextUrl;
             List<String> List= StringHelper.MidListString(html,"<li> <img","</li>");
             for (String s:List)
             {
@@ -130,8 +140,12 @@ public class SubImgActivity extends CoreActivity {
 
         @Override
         protected void onPostExecute(String s) {
-            Sia.notifyDataSetChanged();
-            load.setVisibility(View.GONE);
+            try {
+                Sia.notifyDataSetChanged();
+                load.setVisibility(View.GONE);
+                IsLoad=false;
+            }
+            catch (Exception e){}
         }
     }
 }

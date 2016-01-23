@@ -19,10 +19,9 @@ import java.util.List;
 
 import Core.CoreActivity;
 import Core.MenuModel;
-import Tools.CacheHelper;
 import Tools.StringHelper;
 import youmo.qianbaidu.Sub.SubContentActivity;
-import youmo.qianbaidu.Sub.SubImgActivity;
+import youmo.qianbaidu.Sub.SubItemFragment;
 
 public class MainActivity extends CoreActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -52,7 +51,7 @@ public class MainActivity extends CoreActivity
                 String _url=Lmm.get(i).SubUrl;
                 if (_url.indexOf("tupian")!=-1)
                 {
-                    startActivity(new Intent(v.getContext(),SubImgActivity.class).putExtra("url",_url));
+                    startActivity(new Intent(v.getContext(),SubContentActivity.class).putExtra("url",_url));
                    // startActivity(new Intent(v.getContext(),SubContentActivity.class));
                 }
                 else if (_url.indexOf("vodlist")!=-1)
