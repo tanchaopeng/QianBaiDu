@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +25,11 @@ import Core.ImageModel;
 import Tools.BitmapHelper;
 import Tools.CacheHelper;
 import Tools.HttpHelper;
+import Tools.OkHttpHelper;
 import Tools.StringHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 import youmo.qianbaidu.R;
 
 /**
@@ -36,6 +42,7 @@ public class ImageListFragment extends Fragment {
     private ImageAdapter ImagesAda;
     private List<String> ImageUrlList;
     private CacheHelper ch ;
+    private OkHttpHelper http=new OkHttpHelper();
 
     private GetImgs getImg;
 
@@ -88,6 +95,8 @@ public class ImageListFragment extends Fragment {
 
         getImg=new GetImgs(getActivity(),ImageWidth,ImageWidth);
 
+
+
         ch = new CacheHelper(getActivity());
         ch.ClearAll();
         ImagesRecycler=(RecyclerView)v.findViewById(R.id.fragment_recycler);
@@ -102,10 +111,54 @@ public class ImageListFragment extends Fragment {
         Log.i("图片宽度",String.valueOf(ImageWidth));
         final String url=getArguments().getString("url");
 
-        new GetImgs(getActivity(),ImageWidth,ImageWidth).execute(url);
+        GetImageUrls(url);
+        GetImages(ImagesData);
+        //new GetImgs(getActivity(),ImageWidth,ImageWidth).execute(url);
 
         return v;
     }
+
+    private void GetImageUrls(String url)
+    {
+        List<String> list;
+        String html=http.SyncGet(url);
+        if (html!=null&&html.length()>0)
+            list= StringHelper.MidListString(html,"([a-zA-z]+://[^\\s]*)(.jpg|.png)",0);
+        else
+            list=GiveInfo();
+        for (String s:list)
+            ImagesData.add(new ImageModel(null,url,null));
+        ImagesAda.notifyDataSetChanged();
+    }
+
+    private void GetImages(List<ImageModel> data)
+    {
+       // ImagesData.add(new ImageModel(null,url,bitmap));
+       for (int i=0;i<data.size();i++)
+       {
+           String url= data.get(i).url;
+           http.AsynGet(url,i, new Callback() {
+               @Override
+               public void onFailure(Call call, IOException e) {
+
+               }
+
+               @Override
+               public void onResponse(Call call, Response response) throws IOException {
+                   final int index=(int)call.request().tag();
+                   final Bitmap bitmap= BitmapHelper.DecodeBitmapFromStream(response.body().byteStream(),ImageWidth,ImageWidth);
+                   new Handler(getActivity().getMainLooper()).post(new Runnable() {
+                       @Override
+                       public void run() {
+                           ImagesData.get(index).image=bitmap;
+                           ImagesAda.notifyDataSetChanged();
+                       }
+                   });
+               }
+           });
+       }
+    }
+
 
 
     //取得图片
@@ -210,6 +263,7 @@ public class ImageListFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            if (Data.get(position).image!=null)
             ((ImageHolder)holder).imageView.setImageBitmap(Data.get(position).image);
         }
     }

@@ -26,6 +26,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 /**
  * Created by tanch on 2016/1/12.
  */
@@ -55,6 +61,26 @@ public class HttpHelper  {
         }
         return result;
 
+    }
+
+    public String OkHttpGet(String adress)
+    {
+        String ret=null;
+        OkHttpClient mOkHttpClient = new OkHttpClient();
+        final Request request = new Request.Builder()
+            .url(adress)
+            .build();
+
+        //new call
+        Call call = mOkHttpClient.newCall(request);
+
+        try {
+            Response res= call.execute();
+            ret=res.body().string();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ret;
     }
 
     public static byte[] GetToByte(String url)

@@ -3,8 +3,11 @@ package youmo.qianbaidu;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -14,12 +17,17 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import Core.CoreActivity;
 import Core.MenuModel;
+import Tools.OkHttpHelper;
 import Tools.StringHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 import youmo.qianbaidu.Sub.SubContentActivity;
 import youmo.qianbaidu.Sub.SubItemFragment;
 
@@ -27,6 +35,7 @@ public class MainActivity extends CoreActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     List<MenuModel> Lmm=new ArrayList<MenuModel>();
+    OkHttpHelper http=new OkHttpHelper();
 
     MenuAdapter ma;
     @Override
@@ -37,8 +46,8 @@ public class MainActivity extends CoreActivity
         setSupportActionBar(toolbar);
 
         Lmm.add(new MenuModel("1","2","3"));
-        new FromWeb("http://1144.la");
-
+        //new FromWeb("http://1144.la");
+        GetWeb("http://1144.la");
 
         RecyclerView recyclerView=(RecyclerView)findViewById(R.id.menu_recycler);
         recyclerView.setHasFixedSize(true);
@@ -150,41 +159,49 @@ public class MainActivity extends CoreActivity
         return true;
     }
 
-    class FromWeb extends AsyncTask<String,Integer,String>
+    private void GetWeb(String url)
     {
-
-        public FromWeb(String... params) {
-            this.execute(params);
-        }
-
-
-        @Override
-        protected String doInBackground(String... params) {
-
-            String html=HttpGet(params[0]);
-            List<String> Lmenu=StringHelper.MidListString(html,"<ul>","</ul>");
-            for (String s:Lmenu)
-            {
-                String _title=StringHelper.MidString(s,"<font color=","</font>");
-                _title= _title.substring(10);
-                List<String> _sub=StringHelper.MidListString(s,"li class=\"item has-panel\">(.*?)</li>");
-                for (String _s:_sub)
-                {
-                    String _url=StringHelper.MidString(_s,"href=\"","\"");
-                    if (_url.indexOf("http")<0)
-                        _url=params[0]+"/"+_url;
-                    String _name=StringHelper.MidString(_s,"target=\"_blank\">","</a>");
-                    Lmm.add(new MenuModel(_title,_name,_url));
-                }
+        http.AsynGet(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.i("信息",e.getMessage());
             }
-            return html;
-        }
 
-        @Override
-        protected void onPostExecute(String s) {
-         //   invalidateOptionsMenu();
-            ma.notifyDataSetChanged();
-            ShowToast("完成");
-        }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                List<String> Lmenu=StringHelper.MidListString(response.body().string(),"<ul>","</ul>");
+                for (String s:Lmenu)
+                {
+                    String _title=StringHelper.MidString(s,"<font color=","</font>");
+                    _title= _title.substring(10);
+                    List<String> _sub=StringHelper.MidListString(s,"li class=\"item has-panel\">(.*?)</li>");
+                    for (int i=1;i<_sub.size()-1;i++)
+                    {
+                        String _url=StringHelper.MidString(_sub.get(i),"href=\"","\"");
+                        if (_url.indexOf("http")<0)
+                            _url=call.request().url()+"/"+_url;
+                        String _name=StringHelper.MidString(_sub.get(i),"target=\"_blank\">","</a>");
+                        Lmm.add(new MenuModel(_title,_name,_url));
+                    }
+
+//                   for (String _s:_sub)
+//                    {
+//                        String _url=StringHelper.MidString(_s,"href=\"","\"");
+//                        if (_url.indexOf("http")<0)
+//                            _url=call.request().url()+"/"+_url;
+//                        String _name=StringHelper.MidString(_s,"target=\"_blank\">","</a>");
+//                        Lmm.add(new MenuModel(_title,_name,_url));
+//                    }
+
+                }
+                Log.i("信息","访问完成");
+                new Handler(getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ma.notifyDataSetChanged();
+                    }
+                });
+            }
+        });
     }
 }

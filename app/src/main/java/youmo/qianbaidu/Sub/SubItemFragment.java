@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +28,12 @@ import Core.CoreActivity;
 import Core.SubItemModel;
 import Tools.FileHelper;
 import Tools.HttpHelper;
+import Tools.OkHttpHelper;
 import Tools.SPHelper;
 import Tools.StringHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 import youmo.qianbaidu.Image.ImageListFragment;
 import youmo.qianbaidu.R;
 
@@ -41,6 +47,7 @@ public class SubItemFragment extends Fragment {
     TextView load;
     private SharedPreferences Sp;
     private SharedPreferences.Editor SpEditor;
+    private OkHttpHelper http=new OkHttpHelper();
 
     @Override
     public void onDestroyView() {
@@ -55,26 +62,13 @@ public class SubItemFragment extends Fragment {
 
         load=(TextView)v.findViewById(R.id.loading);
 
-        Sp =getActivity().getSharedPreferences("config", Context.MODE_PRIVATE);
-        SpEditor= Sp.edit();
 
         ExtraUrl=getArguments().getString("url");
 
         if (ExtraUrl==null||ExtraUrl.length()<1)
-        {
-            ExtraUrl=Sp.getString("url",null);
-            if (ExtraUrl==null||ExtraUrl.length()<1)
-            {
-               return super.onCreateView(inflater,container,savedInstanceState);
-            }
-        }
-        else
-        {
-            SpEditor.putString("url", ExtraUrl);
-            SpEditor.apply();
-        }
+            return super.onCreateView(inflater,container,savedInstanceState);
 
-        new GetList().execute(ExtraUrl);
+        GetImagesList(ExtraUrl);
 
         RecyclerView recyclerView=(RecyclerView)v.findViewById(R.id.sub_img_recycler);
         recyclerView.setHasFixedSize(true);
@@ -91,7 +85,7 @@ public class SubItemFragment extends Fragment {
                 if (!IsLoad)
                     if (lastVisibleItem >= totalItemCount - 4 && dy > 0) {
                         IsLoad=true;
-                        new GetList().execute(NextUrl);
+                        GetImagesList(NextUrl);
                     }
             }
         });
@@ -115,37 +109,42 @@ public class SubItemFragment extends Fragment {
         return v;
     }
 
-
-
-    class GetList extends AsyncTask<String,Integer,String>
+    private void GetImagesList(final String url)
     {
-        @Override
-        protected String doInBackground(String... params) {
-            String url=params[0];
-            String html= HttpHelper.Get(url);
-            NextUrl=StringHelper.MidString(html,"上一页","下一页</a");
-            NextUrl=StringHelper.MidString(NextUrl,"<a href='","'>");
-            NextUrl=url.substring(0,url.lastIndexOf("/")+1)+NextUrl;
-            List<String> List= StringHelper.MidListString(html,"<li> <img","</li>");
-            for (String s:List)
-            {
-                String _title=StringHelper.MidString(s,"target=\"_blank\">","</a>");
-                String _url=StringHelper.MidString(s,"<a href=\"","\"");
-                if (_url.indexOf("http")<0)
-                    _url= params[0].substring(0,params[0].lastIndexOf("/")+1)+_url;
-                Lsi.add(new SubItemModel(_title,_url));
-            }
-            return html;
-        }
+        http.AsynGet(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
 
-        @Override
-        protected void onPostExecute(String s) {
-            try {
-                Sia.notifyDataSetChanged();
-                load.setVisibility(View.GONE);
-                IsLoad=false;
             }
-            catch (Exception e){}
-        }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String html= HttpHelper.Get(url);
+                NextUrl=StringHelper.MidString(html,"上一页","下一页</a");
+                NextUrl=StringHelper.MidString(NextUrl,"<a href='","'>");
+                NextUrl=url.substring(0,url.lastIndexOf("/")+1)+NextUrl;
+                List<String> List= StringHelper.MidListString(html,"<li> <img","</li>");
+                for (String s:List)
+                {
+                    String _title=StringHelper.MidString(s,"target=\"_blank\">","</a>");
+                    String _url=StringHelper.MidString(s,"<a href=\"","\"");
+                    if (_url.indexOf("http")<0)
+                        _url= url.substring(0,url.lastIndexOf("/")+1)+_url;
+                    Lsi.add(new SubItemModel(_title,_url));
+                }
+
+                new Handler(getActivity().getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Sia.notifyDataSetChanged();
+                        load.setVisibility(View.GONE);
+                        IsLoad=false;
+                    }
+                });
+
+            }
+        });
+
     }
+
 }
