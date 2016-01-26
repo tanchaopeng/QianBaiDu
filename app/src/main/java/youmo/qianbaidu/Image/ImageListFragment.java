@@ -5,12 +5,14 @@ import android.app.FragmentTransaction;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,18 +42,17 @@ public class ImageListFragment extends Fragment {
     private RecyclerView ImagesRecycler;
     private List<ImageModel> ImagesData=new ArrayList<ImageModel>();
     private ImageAdapter ImagesAda;
-    private List<String> ImageUrlList;
-    private CacheHelper ch ;
-    private OkHttpHelper http=new OkHttpHelper();
+    private ArrayList<String> ImageUrlList;
+    private OkHttpHelper http;
 
-    private GetImgs getImg;
+
 
     private int ImageWidth;
 
 
-    public List<String> GiveInfo()
+    public ArrayList<String> GiveInfo()
     {
-        List<String> Lurl =new ArrayList<String>();
+        ArrayList<String> Lurl =new ArrayList<String>();
         Lurl.add("http://img4.imgtn.bdimg.com/it/u=926486782,2007696240&fm=21&gp=0.jpg");
         Lurl.add("http://pic8.nipic.com/20100728/4800623_122400048931_2.jpg");
         Lurl.add("http://img5.imgtn.bdimg.com/it/u=2738507974,1197415021&fm=21&gp=0.jpg");
@@ -93,15 +94,12 @@ public class ImageListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v=inflater.inflate(R.layout.fragment_img,container,false);
 
-        getImg=new GetImgs(getActivity(),ImageWidth,ImageWidth);
-
-
-
-        ch = new CacheHelper(getActivity());
-        ch.ClearAll();
+        http=new OkHttpHelper(getActivity());
         ImagesRecycler=(RecyclerView)v.findViewById(R.id.fragment_recycler);
         ImagesAda=new ImageAdapter(ImagesData);
         ImagesRecycler.setHasFixedSize(true);
+       // ImagesRecycler.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
+        ImagesRecycler.addItemDecoration(new SpacesItemDecoration(16));
         ImagesRecycler.setLayoutManager(new GridLayoutManager(getActivity(),2));
         ImagesRecycler.setAdapter(ImagesAda);
 
@@ -111,28 +109,14 @@ public class ImageListFragment extends Fragment {
         Log.i("图片宽度",String.valueOf(ImageWidth));
         final String url=getArguments().getString("url");
 
-        GetImageUrls(url);
-        GetImages(ImagesData);
-        //new GetImgs(getActivity(),ImageWidth,ImageWidth).execute(url);
+        new GetImageUrls().execute(url);
 
         return v;
     }
 
-    private void GetImageUrls(String url)
-    {
-        List<String> list;
-        String html=http.SyncGet(url);
-        if (html!=null&&html.length()>0)
-            list= StringHelper.MidListString(html,"([a-zA-z]+://[^\\s]*)(.jpg|.png)",0);
-        else
-            list=GiveInfo();
-        for (String s:list)
-            ImagesData.add(new ImageModel(null,url,null));
-        ImagesAda.notifyDataSetChanged();
-    }
-
     private void GetImages(List<ImageModel> data)
     {
+        List<Call> Lcall=new ArrayList<Call>();
        // ImagesData.add(new ImageModel(null,url,bitmap));
        for (int i=0;i<data.size();i++)
        {
@@ -145,8 +129,11 @@ public class ImageListFragment extends Fragment {
 
                @Override
                public void onResponse(Call call, Response response) throws IOException {
+                   Log.i("Fragment状态","isVisible  "+isVisible()+"  isRemoving  "+isRemoving()+"  isResumed  "+isResumed());
                    final int index=(int)call.request().tag();
-                   final Bitmap bitmap= BitmapHelper.DecodeBitmapFromStream(response.body().byteStream(),ImageWidth,ImageWidth);
+                   final Bitmap bitmap= BitmapHelper.DecodeBitmapFromByte(response.body().bytes(),ImageWidth,ImageWidth);
+                   //避免Fragment 被释放 导致空对象
+                   if (isVisible())
                    new Handler(getActivity().getMainLooper()).post(new Runnable() {
                        @Override
                        public void run() {
@@ -159,59 +146,51 @@ public class ImageListFragment extends Fragment {
        }
     }
 
+    //分割线
+    class SpacesItemDecoration extends RecyclerView.ItemDecoration {
 
+        private int space;
+
+        public SpacesItemDecoration(int space) {
+            this.space=space;
+        }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+            outRect.left=space/2;
+            outRect.right=space/2;
+            outRect.bottom=space;
+
+            //获取第一个ViewItem
+            if(parent.getChildAdapterPosition(view)==0){
+                outRect.top=0;
+            }
+        }
+    }
 
     //取得图片
-    class GetImgs extends AsyncTask<String,Integer,String>
+    class GetImageUrls extends AsyncTask<String,Integer,String>
     {
-        private Context context;
-        private int ImageWidth,ImageHeight;
-        public GetImgs(Context context, int width, int height)
-        {
-            this.context=context;
-            this.ImageWidth=width;
-            this.ImageHeight=height;
-        }
         @Override
         protected String doInBackground(String... params) {
-            //List<String> list=GiveInfo();
-            List<String> list;
-            String html=HttpHelper.Get(params[0]);
+            ArrayList<String> list;
+            String html=http.SyncGet(params[0]);
             if (html!=null&&html.length()>0)
                 list= StringHelper.MidListString(html,"([a-zA-z]+://[^\\s]*)(.jpg|.png)",0);
             else
                 list=GiveInfo();
             ImageUrlList=list;
             for (String s:list)
-            {
-                String url=s;
-                if (url!=null)
-                {
-                    String key= CacheHelper.hashKeyForDisk(url);
-                    byte[] b;
-                    if (ch.IsExists(key))
-                        b=ch.ReadCacheFile(key);
-                    else
-                    {
-                        b= HttpHelper.GetToByte(url);
-                        ch.WriteCacheFile(key,b);
-                    }
-                    Bitmap bitmap= BitmapHelper.DecodeBitmapFromByte(b,ImageWidth,ImageHeight);
-                    Log.i("信息","W:"+String.valueOf(bitmap.getWidth())+" H:"+String.valueOf(bitmap.getHeight()));
+                ImagesData.add(new ImageModel(null,s,null));
 
-                    ImagesData.add(new ImageModel(null,url,bitmap));
-
-                    publishProgress(0);
-                }
-            }
-            Log.i("步骤","doInBackground 完成");
             return null;
         }
 
         @Override
-        protected void onProgressUpdate(Integer... values) {
+        protected void onPostExecute(String s) {
+
             ImagesAda.notifyDataSetChanged();
-            super.onProgressUpdate(values);
+            GetImages(ImagesData);
         }
     }
 
@@ -230,7 +209,7 @@ public class ImageListFragment extends Fragment {
             public ImageHolder(View v) {
                 super(v);
                 imageView=(ImageView)v.findViewById(R.id.adapter_image);
-                imageView.setLayoutParams(new GridLayoutManager.LayoutParams(ImageWidth,ImageWidth));
+                imageView.setLayoutParams(new RecyclerView.LayoutParams(ImageWidth,ImageWidth));
                 imageView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -239,7 +218,7 @@ public class ImageListFragment extends Fragment {
                         ImageContentFragment imageContent = new ImageContentFragment();
                         Bundle b = new Bundle();
                      //   b.putString("url",ImagesData.get(getAdapterPosition()).url);
-                        b.putStringArrayList("url",new ArrayList<String>(ImageUrlList));
+                        b.putStringArrayList("url",ImageUrlList);
                         b.putInt("index",getAdapterPosition());
                         imageContent.setArguments(b);
                         transaction.add(R.id.sub_content_fragment, imageContent);
@@ -264,8 +243,11 @@ public class ImageListFragment extends Fragment {
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (Data.get(position).image!=null)
-            ((ImageHolder)holder).imageView.setImageBitmap(Data.get(position).image);
+            {
+
+                ((ImageHolder)holder).imageView.setImageBitmap(Data.get(position).image);
+            }
+
         }
     }
-
 }

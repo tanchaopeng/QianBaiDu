@@ -3,6 +3,7 @@ package youmo.qianbaidu.Sub;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -74,6 +75,7 @@ public class SubItemFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         final LinearLayoutManager recLiner= new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(recLiner);
+        recyclerView.addItemDecoration(new SpacesItemDecoration(1));
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
@@ -109,6 +111,23 @@ public class SubItemFragment extends Fragment {
         return v;
     }
 
+    class SpacesItemDecoration extends RecyclerView.ItemDecoration {
+
+        private int space;
+
+        public SpacesItemDecoration(int space) {
+            this.space=space;
+        }
+
+        @Override
+        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+            outRect.left=0;
+            outRect.top=0;
+            outRect.right=0;
+            outRect.bottom=space;
+        }
+    }
+
     private void GetImagesList(final String url)
     {
         http.AsynGet(url, new Callback() {
@@ -132,7 +151,7 @@ public class SubItemFragment extends Fragment {
                         _url= url.substring(0,url.lastIndexOf("/")+1)+_url;
                     Lsi.add(new SubItemModel(_title,_url));
                 }
-
+                if (isVisible())
                 new Handler(getActivity().getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {

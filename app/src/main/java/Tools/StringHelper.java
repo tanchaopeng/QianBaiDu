@@ -45,9 +45,9 @@ public class StringHelper {
     }
 
     @Nullable
-    public static List<String> MidListString(String source, String Regex,int i)
+    public static ArrayList<String> MidListString(String source, String Regex,int i)
     {
-        List<String> ret=new ArrayList<String>();
+        ArrayList<String> ret=new ArrayList<String>();
         Pattern p = Pattern.compile(Regex);
         Matcher m = p.matcher(source);
         while (m.find()) {
@@ -56,11 +56,11 @@ public class StringHelper {
         return ret;
     }
 
-    public static List<String> MidListString(String source, String start,String end)
+    public static ArrayList<String> MidListString(String source, String start,String end)
     {
         if (start.isEmpty()||end.isEmpty()||source.isEmpty())
             return null;
-        List<String> ret=new ArrayList<String>();
+        ArrayList<String> ret=new ArrayList<String>();
         boolean b=true;
         int x,y;
         while (b)

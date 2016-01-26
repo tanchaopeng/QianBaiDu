@@ -22,6 +22,7 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,6 +31,10 @@ import java.util.logging.Handler;
 
 import Core.MatrixImageView;
 import Tools.CacheHelper;
+import Tools.OkHttpHelper;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 import youmo.qianbaidu.R;
 
 /**
@@ -39,27 +44,27 @@ public class ImageContentFragment extends Fragment {
     private MatrixImageView image;
     private ViewPager viewPager;
     private int index;
-    List<ImageView> list;
+    List<MatrixImageView> list;
     private ImageAdapter ia;
+    private OkHttpHelper http;
 
-    private CacheHelper ch ;
     private List<String> ImageUrlList;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v=LayoutInflater.from(getActivity()).inflate(R.layout.fragment_image,container,false);
 
+        http=new OkHttpHelper(getActivity());
 
         ImageUrlList= getArguments().getStringArrayList("url");
         index=getArguments().getInt("index");
 
-        ch=new CacheHelper(getActivity());
         viewPager=(ViewPager)v.findViewById(R.id.viewPager_image);
         //image=(MatrixImageView)v.findViewById(R.id.fragment_content_image);
         LayoutInflater lf=getActivity().getLayoutInflater().from(getActivity());
-        list=new ArrayList<ImageView>();
+        list=new ArrayList<MatrixImageView>();
         for (int i=0;i<ImageUrlList.size();i++)
-            list.add((ImageView)lf.inflate(R.layout.viewpager_image,null));
+            list.add((MatrixImageView)lf.inflate(R.layout.adapter_image_content,null));
 
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -69,7 +74,7 @@ public class ImageContentFragment extends Fragment {
 
             @Override
             public void onPageSelected(int position) {
-                new GetImg().execute(position);
+                GetImage(position);
             }
 
             @Override
@@ -80,47 +85,42 @@ public class ImageContentFragment extends Fragment {
         ia= new ImageAdapter(list);
         viewPager.setAdapter(ia);
 
-        new GetImg().execute(index);
+        GetImage(index);
         viewPager.setCurrentItem(index);
-        //new GetImg().execute(url);
         return v;
     }
 
-    class GetImg extends AsyncTask<Integer,Integer,Bitmap>
+    private void GetImage(int index)
     {
-        private int Index;
-        @Override
-        protected Bitmap doInBackground(Integer... params) {
-            Index=params[0];
-            String url=ImageUrlList.get(Index);
-            Log.i("图片URL",url);
-            try{
-                URL address=new URL(url);
-                HttpURLConnection http=(HttpURLConnection)address.openConnection();
-                http.setConnectTimeout(6000);
-                http.setUseCaches(false);
-                Bitmap b1= BitmapFactory.decodeStream(http.getInputStream());
-                http.disconnect();
-                return b1;
-            }
-            catch(Exception e)
-            {
-                return null;
-            }
-        }
+        String url=ImageUrlList.get(index);
+        http.AsynGet(url,index, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
 
-        @Override
-        protected void onPostExecute(Bitmap b) {
-            list.get(Index).setImageBitmap(b);
-            ia.notifyDataSetChanged();
-            Log.i("图片状态","加载完成");
-        }
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final int i=(int)call.request().tag();
+                final Bitmap b1= BitmapFactory.decodeStream(response.body().byteStream());
+                if (isVisible())
+                new android.os.Handler(getActivity().getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        list.get(i).setImageBitmap(b1);
+                        ia.notifyDataSetChanged();
+                        Log.i("图片状态","加载完成"+i);
+                    }
+                });
+
+            }
+        });
     }
     class ImageAdapter extends PagerAdapter
     {
-        private List<ImageView> Liv;
+        private List<MatrixImageView> Liv;
 
-        ImageAdapter(List<ImageView> data)
+        ImageAdapter(List<MatrixImageView> data)
         {
             this.Liv=data;
         }

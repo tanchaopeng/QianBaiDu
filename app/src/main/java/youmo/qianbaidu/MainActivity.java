@@ -179,7 +179,7 @@ public class MainActivity extends CoreActivity
                     {
                         String _url=StringHelper.MidString(_sub.get(i),"href=\"","\"");
                         if (_url.indexOf("http")<0)
-                            _url=call.request().url()+"/"+_url;
+                            _url=call.request().url()+_url;
                         String _name=StringHelper.MidString(_sub.get(i),"target=\"_blank\">","</a>");
                         Lmm.add(new MenuModel(_title,_name,_url));
                     }

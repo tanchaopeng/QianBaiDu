@@ -40,7 +40,7 @@ public class SubItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         public SubItemHolder_defluat(View v) {
             super(v);
-            ItemName=(TextView)v.findViewById(R.id.title);
+            ItemName=(TextView)v.findViewById(R.id.textView_image_itemTitle);
             ItemName.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -51,7 +51,7 @@ public class SubItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v= LayoutInflater.from(parent.getContext()).inflate(R.layout.ymbase_defluat, parent, false);
+        View v= LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_image_item, parent, false);
         return new SubItemHolder_defluat(v);
     }
 

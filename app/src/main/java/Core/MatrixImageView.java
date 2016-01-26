@@ -73,11 +73,30 @@ public class MatrixImageView extends ImageView{
 
         /** 用于记录开始时候的坐标位置 */
         private PointF startPoint = new PointF();
+
+        private boolean isTask=false;
+
+        private boolean isBorder(View v)
+        {
+            int[] pos=new int[2];
+            v.getLocationOnScreen(pos);
+            Log.i("触摸信息","X:"+pos[0]+"  Y:"+pos[1]);
+            int x=pos[0];
+            if (x>=0||(x+v.getWidth())>=getWidth())
+            {
+                return true;
+            }
+            return false;
+        }
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+
+
             // TODO Auto-generated method stub
+
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    isTask=true;
                     //设置拖动模式
                     mMode=MODE_DRAG;
                     startPoint.set(event.getX(), event.getY());
@@ -86,6 +105,7 @@ public class MatrixImageView extends ImageView{
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     reSetMatrix();
+                    isTask=false;
                     break;
                 case MotionEvent.ACTION_MOVE:
                     if (mMode == MODE_ZOOM) {
@@ -95,6 +115,7 @@ public class MatrixImageView extends ImageView{
                     }
                     break;
                 case MotionEvent.ACTION_POINTER_DOWN:
+                    isTask=true;
                     if(mMode==MODE_UNABLE) return true;
                     mMode=MODE_ZOOM;
                     mStartDis = distance(event);
@@ -102,7 +123,16 @@ public class MatrixImageView extends ImageView{
                 default:
                     break;
             }
-
+            if (isBorder(v)&&!isTask)
+            {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                Log.i("Viewpager","可移动");
+            }
+            else
+            {
+                v.getParent().requestDisallowInterceptTouchEvent(false);
+                Log.i("Viewpager","不移动");
+            }
             return mGestureDetector.onTouchEvent(event);
         }
 
@@ -260,6 +290,13 @@ public class MatrixImageView extends ImageView{
          */
         public void onDoubleClick(){
             float scale=isZoomChanged()?1:mDobleClickScale;
+            mCurrentMatrix.set(mMatrix);//初始化Matrix
+            mCurrentMatrix.postScale(scale, scale,getWidth()/2,getHeight()/2);
+            setImageMatrix(mCurrentMatrix);
+        }
+        public void restartImage()
+        {
+            float scale=1;
             mCurrentMatrix.set(mMatrix);//初始化Matrix
             mCurrentMatrix.postScale(scale, scale,getWidth()/2,getHeight()/2);
             setImageMatrix(mCurrentMatrix);
