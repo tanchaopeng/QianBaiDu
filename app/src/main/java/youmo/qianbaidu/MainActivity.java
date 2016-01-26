@@ -1,6 +1,7 @@
 package youmo.qianbaidu;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -58,30 +59,7 @@ public class MainActivity extends CoreActivity
             @Override
             public void OnClick(View v, int i) {
                 String _url=Lmm.get(i).SubUrl;
-                if (_url.indexOf("tupian")!=-1)
-                {
-                    startActivity(new Intent(v.getContext(),SubContentActivity.class).putExtra("url",_url));
-                   // startActivity(new Intent(v.getContext(),SubContentActivity.class));
-                }
-                else if (_url.indexOf("vodlist")!=-1)
-                {
-
-                }else if (_url.indexOf("xiaoshuo")!=-1)
-                {
-
-                }else if (_url.indexOf("xiazai")!=-1)
-                {
-
-                }else if (_url.indexOf("zaixianshipin")!=-1)
-                {
-
-                }
-                else
-                {
-                    startActivity(new Intent(v.getContext(),SubContentActivity.class));
-                    // ShowToast("无相关数据");
-                }
-
+                startActivity(new Intent(v.getContext(),SubContentActivity.class).putExtra("url",_url));
             }
         });
         recyclerView.setAdapter(ma);
@@ -96,6 +74,7 @@ public class MainActivity extends CoreActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+        //startActivity(new Intent().setDataAndType(Uri.parse("http://data3.areyousb.com/-6*66media/videos/iphone/2411.mp4?key=ac99d91db9d3a7fe9274d4ceee418e00"),"video/mp4"));
     }
 
     @Override

@@ -182,7 +182,6 @@ public class ImageListFragment extends Fragment {
             ImageUrlList=list;
             for (String s:list)
                 ImagesData.add(new ImageModel(null,s,null));
-
             return null;
         }
 

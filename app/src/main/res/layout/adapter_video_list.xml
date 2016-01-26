@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#F99"
+    >
+    <ImageView
+        android:id="@+id/imageView_video_smallIamge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_video_50dp"
+        />
+    <TextView
+        android:id="@+id/textView_video_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:text="标题"
+        android:textColor="#000000"
+        android:textSize="18dip"
+        />
+</LinearLayout>

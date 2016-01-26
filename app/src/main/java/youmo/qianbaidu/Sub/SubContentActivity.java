@@ -1,6 +1,7 @@
 package youmo.qianbaidu.Sub;
 
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -22,15 +23,13 @@ public class SubContentActivity extends AppCompatActivity {
         String url= getIntent().getStringExtra("url");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        if (findViewById(R.id.sub_content_fragment)!=null)
-        {
-            SubItemFragment subItemFragment = new SubItemFragment();
-            Bundle b = new Bundle();
-            b.putString("url",url);
-            subItemFragment.setArguments(b);
-            getFragmentManager().beginTransaction().addToBackStack(null);
-            getFragmentManager().beginTransaction().add(R.id.sub_content_fragment,subItemFragment).commit();
-        }
+        SubItemFragment subItemFragment = new SubItemFragment();
+        Bundle b = new Bundle();
+        b.putString("url",url);
+        subItemFragment.setArguments(b);
+        getFragmentManager().beginTransaction().addToBackStack(null);
+        getFragmentManager().beginTransaction().add(R.id.sub_content_fragment,subItemFragment).commit();
+
     }
 
     @Override
